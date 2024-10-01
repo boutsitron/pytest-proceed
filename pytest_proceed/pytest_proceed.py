@@ -1,4 +1,4 @@
-import argparse
+import sys
 import re
 import subprocess
 import traceback
@@ -10,7 +10,7 @@ def main():
 
     This function takes pytest options and a partial name of a test file as input and runs pytest for that test file
     and all the test files that come after it alphabetically. It performs the following steps:
-    1. Parses all command-line arguments without imposing any order.
+    1. Collects all command-line arguments.
     2. Identifies the test file among the arguments.
     3. Separates pytest options from the test file.
     4. Checks if the test file has a syntax error.
@@ -24,18 +24,8 @@ def main():
         SystemExit: If a syntax error is detected in the test file or if the test file is not specified.
         CalledProcessError: If the pytest command fails.
     """
-    # Setup Argument Parsing
-    parser = argparse.ArgumentParser(
-        description="Run pytest for a specific test file and all test files that follow it alphabetically, with options."
-    )
-    parser.add_argument(
-        "args",
-        nargs=argparse.REMAINDER,
-        help="Test file and additional pytest options",
-    )
-    args = parser.parse_args()
-
-    all_args = args.args
+    # Collect all arguments after the script name
+    all_args = sys.argv[1:]
 
     if not all_args:
         print("Error: You must specify a test file.")
@@ -60,11 +50,14 @@ def main():
         print("Error: You must specify a test file.")
         exit(1)
 
-    # Check if the test file has a syntax error
+    # Check if the test file exists
     try:
         with open(test_file_partial, "r", encoding="utf-8") as file:
             source = file.read()
         compile(source, test_file_partial, "exec")
+    except FileNotFoundError:
+        print(f"Error: The test file '{test_file_partial}' was not found.")
+        exit(1)
     except SyntaxError:
         traceback.print_exc()
         exit(
@@ -82,21 +75,14 @@ def main():
     unique_test_files = list(dict.fromkeys(test_files))  # Remove duplicates
 
     # Find and run tests
-    if test_file_partial not in " ".join(unique_test_files):
+    matched_files = [f for f in unique_test_files if f.startswith(test_file_partial)]
+    if not matched_files:
         print(
             f"No test file starting with '{test_file_partial}' found in the test suite."
         )
+        exit(1)
     else:
-        start_index = next(
-            (
-                i
-                for i, test_file in enumerate(unique_test_files)
-                if test_file.startswith(test_file_partial)
-            ),
-            None,
-        )
-
-        # Generate pytest command
+        start_index = unique_test_files.index(matched_files[0])
         files_to_run = unique_test_files[start_index:]
         pytest_command = ["pytest"] + pytest_options + files_to_run
 
