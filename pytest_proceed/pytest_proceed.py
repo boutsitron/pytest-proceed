@@ -96,8 +96,8 @@ def main():
         )
 
         # Generate pytest command
-        files_to_run = " ".join(unique_test_files[start_index:])
-        pytest_command = ["pytest"] + pytest_options + [files_to_run]
+        files_to_run = unique_test_files[start_index:]
+        pytest_command = ["pytest"] + pytest_options + files_to_run
 
         # Execute the pytest command
         print(f"Running: {' '.join(pytest_command)}")
