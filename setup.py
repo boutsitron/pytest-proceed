@@ -8,7 +8,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setup(
     name="pytest-proceed",
-    version="0.1.3",
+    version="0.1.4",
     packages=find_packages(),
     entry_points={
         "console_scripts": [
