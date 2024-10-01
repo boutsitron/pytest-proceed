@@ -10,50 +10,51 @@ def main():
 
     This function takes pytest options and a partial name of a test file as input and runs pytest for that test file
     and all the test files that come after it alphabetically. It performs the following steps:
-    1. Parses the command-line arguments to get pytest options and the partial name of the test file.
-    2. Checks if the test file has a syntax error.
-    3. Lists all the test files available in the test suite.
-    4. Extracts only the test file paths from the test output.
-    5. Finds the index of the test file that matches the partial name.
-    6. Generates the pytest command to run the tests with the given pytest options.
-    7. Executes the pytest command.
-
-    Note: This function assumes that pytest is installed and available in the system.
+    1. Parses all command-line arguments without imposing any order.
+    2. Identifies the test file among the arguments.
+    3. Separates pytest options from the test file.
+    4. Checks if the test file has a syntax error.
+    5. Lists all the test files available in the test suite.
+    6. Extracts only the test file paths from the test output.
+    7. Finds the index of the test file that matches the partial name.
+    8. Generates the pytest command to run the tests with the given pytest options.
+    9. Executes the pytest command.
 
     Raises:
-        SystemExit: If a syntax error is detected in the test file.
+        SystemExit: If a syntax error is detected in the test file or if the test file is not specified.
         CalledProcessError: If the pytest command fails.
     """
     # Setup Argument Parsing
     parser = argparse.ArgumentParser(
-        description="Run pytest for specific test file and all test files that follow it alphabetically with options."
+        description="Run pytest for a specific test file and all test files that follow it alphabetically, with options."
     )
     parser.add_argument(
-        "test_file",
-        type=str,
-        nargs="?",
-        default=None,
-        help="Partial name of the test file to start from (e.g., tests/test_continuation.py).",
-    )
-    parser.add_argument(
-        "pytest_options",
+        "args",
         nargs=argparse.REMAINDER,
-        help="Additional pytest options (e.g., -x, -s, etc.)",
+        help="Test file and additional pytest options",
     )
     args = parser.parse_args()
 
-    # Separate pytest options and the test file
-    pytest_options = []
-    test_file_partial = None
+    all_args = args.args
 
-    for arg in args.pytest_options:
-        if ".py" in arg:  # Assuming this to be a test file
-            test_file_partial = arg
+    if not all_args:
+        print("Error: You must specify a test file.")
+        exit(1)
+
+    test_file_partial = None
+    pytest_options = []
+
+    # Identify the test file and collect pytest options
+    for arg in all_args:
+        if arg.endswith(".py") or (
+            not arg.startswith("-") and not arg.startswith("--")
+        ):
+            if not test_file_partial:
+                test_file_partial = arg
+            else:
+                pytest_options.append(arg)
         else:
             pytest_options.append(arg)
-
-    if args.test_file:
-        test_file_partial = args.test_file  # Prioritize positional test file argument
 
     if not test_file_partial:
         print("Error: You must specify a test file.")
