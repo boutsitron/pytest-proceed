@@ -1,6 +1,6 @@
-import sys
 import re
 import subprocess
+import sys
 import traceback
 
 
@@ -65,10 +65,24 @@ def main():
         )
 
     # List all tests
-    completed_process = subprocess.run(
-        ["pytest", "--collect-only", "-q"], capture_output=True, text=True, check=True
-    )
-    test_output = completed_process.stdout.splitlines()
+    try:
+        completed_process = subprocess.run(
+            ["pytest", "--collect-only", "-q"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        test_output = completed_process.stdout.splitlines()
+    except subprocess.CalledProcessError as e:
+        print(
+            f"Error: Failed to collect tests. pytest exited with status {e.returncode}"
+        )
+        print("Output:")
+        print(e.output)
+        print("Error:")
+        print(e.stderr)
+        print("\nTry running 'pytest --collect-only -v' for more detailed information.")
+        exit(1)
 
     # Extract only the test file paths
     test_files = [re.split(r"::", test)[0] for test in test_output if "::" in test]
